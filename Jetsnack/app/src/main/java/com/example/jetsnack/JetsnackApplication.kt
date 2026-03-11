@@ -1,43 +1,25 @@
-/*
- * Copyright 2020 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-package com.example.jetnews
+package com.example.jetsnack
 
 import android.app.Application
-import com.example.jetnews.data.AppContainer
-import com.example.jetnews.data.AppContainerImpl
 import android.util.Log
-import com.example.jetnews.utils.SplunkConfiguration
+import com.example.jetsnack.utils.SplunkConfiguration
 import com.splunk.rum.integration.agent.api.AgentConfiguration
 import com.splunk.rum.integration.agent.api.EndpointConfiguration
 import com.splunk.rum.integration.agent.api.SplunkRum
 import com.splunk.rum.integration.agent.common.attributes.MutableAttributes
 import com.splunk.rum.integration.customtracking.extension.customTracking
-import com.splunk.rum.integration.sessionreplay.extension.sessionReplay
 import com.splunk.rum.integration.navigation.NavigationModuleConfiguration
+import com.splunk.rum.integration.sessionreplay.extension.sessionReplay
 import io.opentelemetry.api.common.AttributeKey
 import io.opentelemetry.api.trace.Span
 import java.net.HttpURLConnection
 import java.net.URL
 import kotlin.concurrent.thread
 
-class JetnewsApplication : Application() {
+class JetsnackApplication : Application() {
+
     companion object {
-        const val JETNEWS_APP_URI = "https://developer.android.com/jetnews"
-        private const val TAG = "SplunkSetup"
+        private const val TAG = "JetsnackSplunk"
 
         fun trackWorkflow(workflowName: String): Span? {
             return try {
@@ -46,7 +28,7 @@ class JetnewsApplication : Application() {
                 Log.e(TAG, "Failed to track workflow '$workflowName': ${e.message}")
                 null
             }
-    }
+        }
 
         fun recordError(
             errorType: String,
@@ -58,27 +40,23 @@ class JetnewsApplication : Application() {
                 span?.setAttribute(AttributeKey.stringKey("error"), "true")
                 span?.setAttribute(AttributeKey.stringKey("error.type"), errorType)
                 span?.setAttribute(AttributeKey.stringKey("error.message"), errorMessage)
+
                 attributes.forEach { (key, value) ->
                     span?.setAttribute(AttributeKey.stringKey(key), value)
                 }
+
                 span?.addEvent("error_recorded")
                 span?.end()
             } catch (e: Exception) {
-                Log.e(com.example.jetnews.JetnewsApplication.Companion.TAG, "Failed to record error: ${e.message}")
+                Log.e(TAG, "Failed to record error: ${e.message}")
             }
         }
 
         fun isConfigurationValid(): Boolean = SplunkConfiguration.isValid
     }
 
-
-
-    // AppContainer instance used by the rest of classes to obtain dependencies
-    lateinit var container: AppContainer
-
     override fun onCreate() {
         super.onCreate()
-        container = AppContainerImpl(this)
         initializeSplunkRum()
     }
 
@@ -95,21 +73,25 @@ class JetnewsApplication : Application() {
                 Log.i("SplunkNetTest", "Reachability OK. HTTP=${conn.responseCode}")
                 conn.disconnect()
             } catch (e: Exception) {
-                Log.e("SplunkNetTest", "Reachability FAILED: ${e.javaClass.simpleName}: ${e.message}")
+                Log.e(
+                    "SplunkNetTest",
+                    "Reachability FAILED: ${e.javaClass.simpleName}: ${e.message}"
+                )
             }
         }
     }
 
     private fun initializeSplunkRum() {
         if (!SplunkConfiguration.isValid) {
-            Log.w(com.example.jetnews.JetnewsApplication.Companion.TAG, "Update REALM and TOKEN in SplunkConfiguration.kt")
+            Log.w(TAG, "Update REALM and TOKEN in SplunkConfiguration.kt")
             return
         }
 
         try {
             val globalAttributes = MutableAttributes().apply {
-                this["app.name"] = SplunkConfiguration.APP_NAME //Sample Only, Create your own global attributes
+                this["app.name"] = SplunkConfiguration.APP_NAME
                 this["app.state"] = "LocalRun"
+                this["app.framework"] = "jetpack-compose"
             }
 
             SplunkRum.install(
@@ -125,25 +107,24 @@ class JetnewsApplication : Application() {
                     globalAttributes = globalAttributes
                 ),
                 moduleConfigurations = arrayOf(
-                    // Tracks navigation for activities and fragments.
-                    // isEnabled = true to enable navigation tracking.
-                    // isAutomatedTrackingEnabled = false disables automated tracking.
                     NavigationModuleConfiguration(
                         isEnabled = true,
                         isAutomatedTrackingEnabled = true
                     )
                 )
-
-
             )
 
+            // Only keep this line if you added the session replay dependency
             SplunkRum.instance.sessionReplay.start()
 
             testSplunkReachability()
 
-            Log.i(com.example.jetnews.JetnewsApplication.Companion.TAG, "Splunk RUM initialized — realm=${SplunkConfiguration.REALM}, env=${SplunkConfiguration.ENVIRONMENT}")
+            Log.i(
+                TAG,
+                "Splunk RUM initialized — realm=${SplunkConfiguration.REALM}, env=${SplunkConfiguration.ENVIRONMENT}"
+            )
         } catch (e: Exception) {
-            Log.e(com.example.jetnews.JetnewsApplication.Companion.TAG, "RUM installation failed: ${e.message}")
+            Log.e(TAG, "RUM installation failed: ${e.message}", e)
         }
     }
 }

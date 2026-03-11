@@ -21,6 +21,8 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.parcelize)
     alias(libs.plugins.compose)
+    id("com.splunk.rum-okhttp3-auto-plugin") version "2.1.6"
+    id("com.splunk.rum-httpurlconnection-auto-plugin") version "2.1.6"
 }
 
 android {
@@ -112,6 +114,9 @@ dependencies {
 
     implementation(libs.kotlin.stdlib)
     implementation(libs.kotlinx.coroutines.android)
+
+    implementation("com.splunk:splunk-otel-android:2.1.5")
+
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)

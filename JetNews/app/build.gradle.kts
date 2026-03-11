@@ -20,6 +20,8 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.compose)
+    id("com.splunk.rum-okhttp3-auto-plugin") version "2.1.6"
+    id("com.splunk.rum-httpurlconnection-auto-plugin") version "2.1.6"
 }
 
 android {
@@ -92,6 +94,10 @@ dependencies {
 
     implementation(libs.kotlin.stdlib)
     implementation(libs.kotlinx.coroutines.android)
+    implementation("com.splunk:splunk-otel-android:2.1.5")
+//    implementation("com.splunk:splunk-otel-android-session-replay:2.+")
+//    implementation("com.splunk:splunk-otel-android-agent-navigation:2.+")
+//    implementation("com.splunk:splunk-otel-android-webview:2.+")
 
     implementation(libs.androidx.compose.animation)
     implementation(libs.androidx.compose.foundation.layout)
