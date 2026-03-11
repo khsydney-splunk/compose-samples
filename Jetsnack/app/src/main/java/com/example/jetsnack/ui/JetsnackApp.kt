@@ -57,6 +57,7 @@ import com.example.jetsnack.ui.snackdetail.nonSpatialExpressiveSpring
 import com.example.jetsnack.ui.snackdetail.spatialExpressiveSpring
 import com.example.jetsnack.ui.theme.JetsnackTheme
 import androidx.compose.runtime.LaunchedEffect
+import androidx.navigation.NavHostController
 import com.splunk.rum.integration.agent.api.SplunkRum
 import com.splunk.rum.integration.navigation.extension.navigation
 import kotlinx.coroutines.flow.collectLatest
@@ -65,17 +66,22 @@ import kotlinx.coroutines.flow.collectLatest
 fun JetsnackApp() {
     JetsnackTheme {
         val jetsnackNavController = rememberJetsnackNavController()
-        LaunchedEffect(jetsnackNavController.navController) {
 
-            jetsnackNavController.navController.currentBackStackEntryFlow
-                .collectLatest { entry ->
+        // OUTER NAV TRACKING
+        // Tracks top-level routes like HOME and SNACK_DETAIL
+        TrackNavScreens(jetsnackNavController.navController)
 
-                    val route = entry.destination.route ?: "unknown"
-
-                    SplunkRum.instance.navigation.track(route)
-
-                }
-        }
+//        LaunchedEffect(jetsnackNavController.navController) {
+//
+//            jetsnackNavController.navController.currentBackStackEntryFlow
+//                .collectLatest { entry ->
+//
+//                    val route = entry.destination.route ?: "unknown"
+//
+//                    SplunkRum.instance.navigation.track(route)
+//
+//                }
+//        }
 //        LaunchedEffect(jetsnackNavController.navController) {
 //            jetsnackNavController.navController.currentBackStackEntryFlow.collectLatest { entry ->
 //                val route = entry.destination.route ?: "unknown"
@@ -139,12 +145,16 @@ fun MainContainer(modifier: Modifier = Modifier, onSnackSelected: (Long, String,
     val animatedVisibilityScope = LocalNavAnimatedVisibilityScope.current
         ?: throw IllegalStateException("No SharedElementScope found")
 
-    LaunchedEffect(nestedNavController.navController) {
-        nestedNavController.navController.currentBackStackEntryFlow.collectLatest { entry ->
-            val route = entry.destination.route ?: "unknown"
-            SplunkRum.instance.navigation.track(route)
-        }
-    }
+    // NESTED NAV TRACKING
+    // Tracks Feed / Search / Cart / Profile routes
+    TrackNavScreens(nestedNavController.navController)
+
+//    LaunchedEffect(nestedNavController.navController) {
+//        nestedNavController.navController.currentBackStackEntryFlow.collectLatest { entry ->
+//            val route = entry.destination.route ?: "unknown"
+//            SplunkRum.instance.navigation.track(route)
+//        }
+//    }
     JetsnackScaffold(
         bottomBar = {
             with(animatedVisibilityScope) {
@@ -199,3 +209,13 @@ fun MainContainer(modifier: Modifier = Modifier, onSnackSelected: (Long, String,
 
 val LocalNavAnimatedVisibilityScope = compositionLocalOf<AnimatedVisibilityScope?> { null }
 val LocalSharedTransitionScope = compositionLocalOf<SharedTransitionScope?> { null }
+
+@Composable
+private fun TrackNavScreens(navController: NavHostController) {
+    LaunchedEffect(navController) {
+        navController.currentBackStackEntryFlow.collectLatest { entry ->
+            val route = entry.destination.route ?: "unknown"
+            SplunkRum.instance.navigation.track(route)
+        }
+    }
+}
