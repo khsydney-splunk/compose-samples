@@ -57,10 +57,8 @@ import com.example.jetsnack.ui.snackdetail.nonSpatialExpressiveSpring
 import com.example.jetsnack.ui.snackdetail.spatialExpressiveSpring
 import com.example.jetsnack.ui.theme.JetsnackTheme
 import androidx.compose.runtime.LaunchedEffect
-import com.example.jetsnack.JetsnackApplication
 import com.splunk.rum.integration.agent.api.SplunkRum
 import com.splunk.rum.integration.navigation.extension.navigation
-import io.opentelemetry.api.common.AttributeKey
 import kotlinx.coroutines.flow.collectLatest
 @Preview
 @Composable
