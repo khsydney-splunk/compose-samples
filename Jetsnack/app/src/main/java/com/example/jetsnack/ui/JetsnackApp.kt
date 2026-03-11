@@ -56,12 +56,38 @@ import com.example.jetsnack.ui.snackdetail.SnackDetail
 import com.example.jetsnack.ui.snackdetail.nonSpatialExpressiveSpring
 import com.example.jetsnack.ui.snackdetail.spatialExpressiveSpring
 import com.example.jetsnack.ui.theme.JetsnackTheme
-
+import androidx.compose.runtime.LaunchedEffect
+import com.example.jetsnack.JetsnackApplication
+import com.splunk.rum.integration.agent.api.SplunkRum
+import com.splunk.rum.integration.navigation.extension.navigation
+import io.opentelemetry.api.common.AttributeKey
+import kotlinx.coroutines.flow.collectLatest
 @Preview
 @Composable
 fun JetsnackApp() {
     JetsnackTheme {
         val jetsnackNavController = rememberJetsnackNavController()
+        LaunchedEffect(jetsnackNavController.navController) {
+
+            jetsnackNavController.navController.currentBackStackEntryFlow
+                .collectLatest { entry ->
+
+                    val route = entry.destination.route ?: "unknown"
+
+                    SplunkRum.instance.navigation.track(route)
+
+                }
+        }
+//        LaunchedEffect(jetsnackNavController.navController) {
+//            jetsnackNavController.navController.currentBackStackEntryFlow.collectLatest { entry ->
+//                val route = entry.destination.route ?: "unknown"
+//
+//                val span = JetsnackApplication.trackWorkflow("ScreenView")
+//                span?.setAttribute(AttributeKey.stringKey("screen.name"), route)
+//                span?.end()
+//            }
+//        }
+
         SharedTransitionLayout {
             CompositionLocalProvider(
                 LocalSharedTransitionScope provides this,
@@ -114,6 +140,13 @@ fun MainContainer(modifier: Modifier = Modifier, onSnackSelected: (Long, String,
         ?: throw IllegalStateException("No SharedElementScope found")
     val animatedVisibilityScope = LocalNavAnimatedVisibilityScope.current
         ?: throw IllegalStateException("No SharedElementScope found")
+
+    LaunchedEffect(nestedNavController.navController) {
+        nestedNavController.navController.currentBackStackEntryFlow.collectLatest { entry ->
+            val route = entry.destination.route ?: "unknown"
+            SplunkRum.instance.navigation.track(route)
+        }
+    }
     JetsnackScaffold(
         bottomBar = {
             with(animatedVisibilityScope) {
